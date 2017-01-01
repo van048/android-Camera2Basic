@@ -82,6 +82,7 @@ public class Camera2BasicFragment extends Fragment
     private static final String FRAGMENT_DIALOG = "dialog";
 
     static {
+        // TODO: 2016/12/31
         ORIENTATIONS.append(Surface.ROTATION_0, 90);
         ORIENTATIONS.append(Surface.ROTATION_90, 0);
         ORIENTATIONS.append(Surface.ROTATION_180, 270);
@@ -103,11 +104,13 @@ public class Camera2BasicFragment extends Fragment
      */
     private static final int STATE_WAITING_LOCK = 1;
 
+    // TODO: 2017/1/1
     /**
      * Camera state: Waiting for the exposure to be precapture state.
      */
     private static final int STATE_WAITING_PRECAPTURE = 2;
 
+    // TODO: 2017/1/1
     /**
      * Camera state: Waiting for the exposure state to be something other than precapture.
      */
@@ -176,6 +179,7 @@ public class Camera2BasicFragment extends Fragment
      */
     private CameraDevice mCameraDevice;
 
+    // TODO: 2017/1/1 how to understand
     /**
      * The {@link android.util.Size} of camera preview.
      */
@@ -265,6 +269,7 @@ public class Camera2BasicFragment extends Fragment
      */
     private int mState = STATE_PREVIEW;
 
+    // TODO: 2017/1/1 why
     /**
      * A {@link Semaphore} to prevent the app from exiting before closing the camera.
      */
@@ -275,6 +280,7 @@ public class Camera2BasicFragment extends Fragment
      */
     private boolean mFlashSupported;
 
+    // TODO: 2017/1/1 what
     /**
      * Orientation of the camera sensor
      */
@@ -294,12 +300,14 @@ public class Camera2BasicFragment extends Fragment
                 }
                 case STATE_WAITING_LOCK: {
                     Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
+                    // TODO: 2017/1/1 
                     if (afState == null) {
                         captureStillPicture();
                     } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
                             CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
                         // CONTROL_AE_STATE can be null on some devices
                         Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                        // TODO: 2017/1/1  
                         if (aeState == null ||
                                 aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
                             mState = STATE_PICTURE_TAKEN;
@@ -313,6 +321,7 @@ public class Camera2BasicFragment extends Fragment
                 case STATE_WAITING_PRECAPTURE: {
                     // CONTROL_AE_STATE can be null on some devices
                     Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
+                    // TODO: 2017/1/1  
                     if (aeState == null ||
                             aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
                             aeState == CaptureRequest.CONTROL_AE_STATE_FLASH_REQUIRED) {
@@ -320,6 +329,7 @@ public class Camera2BasicFragment extends Fragment
                     }
                     break;
                 }
+                // TODO: 2017/1/1
                 case STATE_WAITING_NON_PRECAPTURE: {
                     // CONTROL_AE_STATE can be null on some devices
                     Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
@@ -447,6 +457,7 @@ public class Camera2BasicFragment extends Fragment
         // a camera and start preview from here (otherwise, we wait until the surface is ready in
         // the SurfaceTextureListener).
         if (mTextureView.isAvailable()) {
+            // TODO: 2016/12/31 mTextureView <-> surface
             openCamera(mTextureView.getWidth(), mTextureView.getHeight());
         } else {
             mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
@@ -502,21 +513,27 @@ public class Camera2BasicFragment extends Fragment
                     continue;
                 }
 
+                // The available stream configurations that this camera
+                // device supports; also includes the minimum frame
+                // durations and the stall durations for each format/size combination.
                 StreamConfigurationMap map = characteristics.get(
                         CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
                 if (map == null) {
                     continue;
                 }
 
+                // TODO: 2017/1/1 why largest?
                 // For still image captures, we use the largest available size.
                 Size largest = Collections.max(
                         Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
                         new CompareSizesByArea());
+                // TODO: 2017/1/1 maxImages
                 mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
                         ImageFormat.JPEG, /*maxImages*/2);
                 mImageReader.setOnImageAvailableListener(
                         mOnImageAvailableListener, mBackgroundHandler);
 
+                // TODO: 2016/12/31 rotation??
                 // Find out if we need to swap dimension to get the preview size relative to sensor
                 // coordinate.
                 int displayRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
@@ -547,6 +564,7 @@ public class Camera2BasicFragment extends Fragment
                 int maxPreviewWidth = displaySize.x;
                 int maxPreviewHeight = displaySize.y;
 
+                // TODO: 2017/1/1
                 if (swappedDimensions) {
                     rotatedPreviewWidth = height;
                     rotatedPreviewHeight = width;
@@ -565,10 +583,12 @@ public class Camera2BasicFragment extends Fragment
                 // Danger, W.R.! Attempting to use too large a preview size could  exceed the camera
                 // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
                 // garbage capture data.
+                // TODO: 2016/12/31 SurfaceTexture.class
                 mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
                         rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
                         maxPreviewHeight, largest);
 
+                // device-specified, seems always getWidth() > getHeight()
                 // We fit the aspect ratio of TextureView to the size of preview we picked.
                 int orientation = getResources().getConfiguration().orientation;
                 if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -606,7 +626,7 @@ public class Camera2BasicFragment extends Fragment
             return;
         }
         setUpCameraOutputs(width, height);
-        configureTransform(width, height);
+        configureTransform(width, height); // tune mTextureView position scale and so on
         Activity activity = getActivity();
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         try {
@@ -677,6 +697,7 @@ public class Camera2BasicFragment extends Fragment
             SurfaceTexture texture = mTextureView.getSurfaceTexture();
             assert texture != null;
 
+            // TODO: 2017/1/1 why
             // We configure the size of default buffer to be the size of camera preview we want.
             texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
 
@@ -689,6 +710,7 @@ public class Camera2BasicFragment extends Fragment
             mPreviewRequestBuilder.addTarget(surface);
 
             // Here, we create a CameraCaptureSession for camera preview.
+            // TODO: 2017/1/1 why two targets
             mCameraDevice.createCaptureSession(Arrays.asList(surface, mImageReader.getSurface()),
                     new CameraCaptureSession.StateCallback() {
 
@@ -742,6 +764,7 @@ public class Camera2BasicFragment extends Fragment
         if (null == mTextureView || null == mPreviewSize || null == activity) {
             return;
         }
+        // TODO: 2017/1/1
         int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
         Matrix matrix = new Matrix();
         RectF viewRect = new RectF(0, 0, viewWidth, viewHeight);
@@ -774,11 +797,13 @@ public class Camera2BasicFragment extends Fragment
      */
     private void lockFocus() {
         try {
+            // TODO: 2017/1/1 lockFocus??
             // This is how to tell the camera to lock focus.
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                     CameraMetadata.CONTROL_AF_TRIGGER_START);
             // Tell #mCaptureCallback to wait for the lock.
             mState = STATE_WAITING_LOCK;
+            // TODO: 2017/1/1 capture?
             mCaptureSession.capture(mPreviewRequestBuilder.build(), mCaptureCallback,
                     mBackgroundHandler);
         } catch (CameraAccessException e) {
@@ -792,6 +817,7 @@ public class Camera2BasicFragment extends Fragment
      */
     private void runPrecaptureSequence() {
         try {
+            // TODO: 2017/1/1 what for
             // This is how to tell the camera to trigger.
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                     CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
@@ -824,6 +850,7 @@ public class Camera2BasicFragment extends Fragment
                     CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
             setAutoFlash(captureBuilder);
 
+            // TODO: 2017/1/1 rotation 
             // Orientation
             int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, getOrientation(rotation));
@@ -837,6 +864,7 @@ public class Camera2BasicFragment extends Fragment
                                                @NonNull TotalCaptureResult result) {
                     showToast("Saved: " + mFile);
                     Log.d(TAG, mFile.toString());
+                    // TODO: 2017/1/1 what for 
                     unlockFocus();
                 }
             };
@@ -847,6 +875,8 @@ public class Camera2BasicFragment extends Fragment
             e.printStackTrace();
         }
     }
+
+    // TODO: 2017/1/1  
 
     /**
      * Retrieves the JPEG orientation from the specified screen rotation.
@@ -931,6 +961,7 @@ public class Camera2BasicFragment extends Fragment
 
         @Override
         public void run() {
+            // TODO: 2016/12/31 getPlanes()[0]
             ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
             byte[] bytes = new byte[buffer.remaining()];
             buffer.get(bytes);
